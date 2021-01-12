@@ -2,6 +2,7 @@
 
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+import math
 import os
 from getpass import getpass
 from math import sqrt
@@ -36,7 +37,6 @@ def get_authentication():
 
 
 def entangler(initial_state, circuit):
-
     circuit.initialize(initial_state, 0)
     zero_state = [1, 0]
     circuit.initialize(zero_state, 1)
@@ -77,6 +77,7 @@ def disentangler(circuit):
     circuit.x(q[4]).c_if(b4, 1)
     return circuit
 
+
 def teleport(state):
     q = QuantumRegister(4)
     b0 = ClassicalRegister(1)
@@ -101,6 +102,126 @@ def teleport(state):
     qc.x(q[0]).c_if(b0, 1)
     qc.x(q[2]).c_if(b0, 1)
     qc.swap(q[2], q[3])
+    return qc
+
+
+def qft():
+    q = QuantumRegister(6)
+    b0 = ClassicalRegister(1)
+    b1 = ClassicalRegister(1)
+    b2 = ClassicalRegister(1)
+    b3 = ClassicalRegister(1)
+    b4 = ClassicalRegister(1)
+    b5 = ClassicalRegister(1)
+    qc = QuantumCircuit(q, b0, b1, b2, b3, b4, b5)
+
+    zero_state = [1, 0]
+    qc.initialize(zero_state, 2)
+    qc.initialize(zero_state, 3)
+
+    one_state = [0, 1]
+    qc.initialize(one_state, 0)
+    qc.initialize(one_state, 1)
+    qc.initialize(one_state, 4)
+    qc.initialize(one_state, 5)
+
+    qc.h(q[0])
+    qc.crz(2 * math.pi / pow(2, 2), q[1], q[0])
+
+    qc.h(q[2])
+    qc.cx(q[2], q[3])
+
+    qc.cx(q[4], q[3])
+    qc.measure(q[3], b3)
+    qc.x(q[2]).c_if(b3, 1)
+    qc.x(q[3]).c_if(b3, 1)
+
+    qc.crz(2 * math.pi / pow(2, 3), q[2], q[0])
+    qc.h(q[2])
+    qc.measure(q[2], b2)
+
+    qc.x(q[2]).c_if(b2, 1)
+    qc.z(q[4]).c_if(b2, 1)
+
+    qc.h(q[2])
+    qc.cx(q[2], q[3])
+
+    qc.cnot(q[5], q[3])
+    qc.measure(q[3], b3)
+
+    qc.x(q[2]).c_if(b3, 1)
+    qc.x(q[3]).c_if(b3, 1)
+
+    qc.crz(2 * math.pi / pow(2, 4), q[2], q[0])
+    qc.h(q[2])
+    qc.measure(q[2], b2)
+
+    qc.x(q[2]).c_if(b2, 1)
+    qc.z(q[5]).c_if(b2, 1)
+
+    qc.h(q[2])
+    qc.cx(q[2], q[3])
+
+    qc.cx(q[4], q[3])
+    qc.measure(q[3], b3)
+
+    qc.x(q[2]).c_if(b3, 1)
+    qc.x(q[3]).c_if(b3, 1)
+
+    qc.h(q[1])
+    qc.crz(2 * math.pi / pow(2, 2), q[2], q[1])
+
+    qc.h(q[2])
+    qc.measure(q[2], b2)
+
+    qc.x(q[2]).c_if(b2, 1)
+    qc.z(q[4]).c_if(b2, 1)
+
+    qc.h(q[2])
+    qc.cx(q[2], q[3])
+
+    qc.cx(q[5], q[3])
+    qc.measure(q[3], b3)
+    qc.x(q[2]).c_if(b3, 1)
+    qc.x(q[3]).c_if(b3, 1)
+
+    qc.crz(2 * math.pi / pow(2, 3), q[2], q[1])
+    qc.h(q[2])
+    qc.measure(q[2], b2)
+
+    qc.x(q[2]).c_if(b2, 1)
+    qc.z(q[4]).c_if(b2, 1)
+    qc.h(q[4])
+    qc.crz(2 * math.pi / pow(2, 2), q[5], q[4])
+    qc.h(q[5])
+
+    return qc
+
+def nonlocal_rk(control, target, theta):
+    q = QuantumRegister(4)
+    b0 = ClassicalRegister(1)
+    b1 = ClassicalRegister(1)
+    b2 = ClassicalRegister(1)
+    b3 = ClassicalRegister(1)
+    qc = QuantumCircuit(q, b0, b1, b2, b3)
+    qc.initialize(control, 0)
+    qc.initialize(target, 3)
+    zero_state = [1, 0]
+    qc.initialize(zero_state, 1)
+    qc.initialize(zero_state, 2)
+
+    qc.h(q[1])
+    qc.cx(q[1], q[2])
+    qc.cx(q[0], q[1])
+    qc.measure(q[1], b1)
+    qc.x(q[1]).c_if(b1, 1)
+    qc.x(q[2]).c_if(b1, 1)
+    qc.crz(theta, q[2], q[3])
+    qc.h(q[2])
+    qc.measure(q[2], b2)
+    qc.z(q[0]).c_if(b2, 1)
+    qc.x(q[2]).c_if(b2, 1)
+
     return qc
 
 
@@ -130,6 +251,7 @@ def nonlocal_cnot(control, target):
     qc.x(q[2]).c_if(b2, 1)
 
     return qc
+
 
 if __name__ == '__main__':
     authentication = get_authentication()
@@ -169,16 +291,29 @@ if __name__ == '__main__':
     # circuit.measure(q[3], b[3])
 
     # TRY CNOT
-    control = [1/sqrt(2), 1/sqrt(2)]
-    target = [1, 0]
-    circuit = nonlocal_cnot(control, target)
+    # control = [1/sqrt(2), 1/sqrt(2)]
+    # target = [1, 0]
+    # circuit = nonlocal_cnot(control, target)
+    # q = circuit.qubits
+    # b = circuit.clbits
+    # circuit.measure(q[0], b[0])
+    # circuit.measure(q[1], b[1])
+    # circuit.measure(q[2], b[2])
+    # circuit.measure(q[3], b[3])
+
+    circuit = qft()
+
+    # control = [0, 1]
+    # target = [0, 1]
+    # circuit = nonlocal_rk(control, target, 2 * math.pi / pow(2, 3))
     q = circuit.qubits
     b = circuit.clbits
     circuit.measure(q[0], b[0])
     circuit.measure(q[1], b[1])
     circuit.measure(q[2], b[2])
     circuit.measure(q[3], b[3])
-
+    circuit.measure(q[4], b[4])
+    circuit.measure(q[5], b[5])
 
     qi_job = execute(circuit, backend=qi_backend, shots=256)
     qi_result = qi_job.result()
@@ -189,4 +324,3 @@ if __name__ == '__main__':
     probabilities_histogram = qi_result.get_probabilities(circuit)
     print('\nState\tProbabilities')
     [print('{0}\t\t{1}'.format(state, val)) for state, val in probabilities_histogram.items()]
-
