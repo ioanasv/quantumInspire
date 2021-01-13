@@ -153,6 +153,14 @@ def nonlocal_cnot():
 
     return qc
 
+def swapgate():
+    q = QuantumRegister(2)
+    qc = QuantumCircuit(q)
+    qc.cx(q[0],q[1])
+    qc.cx(q[1], q[0])
+    qc.cx(q[0], q[1])
+    return qc
+
 def qft_2n():
     #define (qu)bits
     q = QuantumRegister(8)
@@ -170,6 +178,52 @@ def qft_2n():
     qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5)), [6, 4, 3, 0], [6, 4, 3, 0])
     qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 6)), [7, 4, 3, 0], [7, 4, 3, 0])
 
+    #gates on second qubit
+    qc.h(q[1])
+    qc.crz(2 * math.pi / pow(2, 2), q[2], q[1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [5, 4, 3, 1], [5, 4, 3, 1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4)), [6, 4, 3, 1], [6, 4, 3, 1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5)), [7, 4, 3, 1], [7, 4, 3, 1])
+    #gates on third qubit
+    qc.h(q[2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2)), [5, 4, 3, 2], [5, 4, 3, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [6, 4, 3, 2], [6, 4, 3, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4)), [7, 4, 3, 2], [7, 4, 3, 2])
+    #gates on fourth qubit
+    qc.h(q[5])
+    qc.crz(2 * math.pi / pow(2, 2), q[6], q[5])
+    qc.crz(2 * math.pi / pow(2, 3), q[7], q[5])
+    #gates on fifth qubit
+    qc.h(q[6])
+    qc.crz(2 * math.pi / pow(2, 2), q[7], q[6])
+    #gates on sixth qubit
+    qc.h(q[7])
+    return qc
+
+def qft_2n_L():
+    #define (qu)bits
+    q = QuantumRegister(8)
+    b = [ClassicalRegister(1) for i in range(8)]
+    qc = QuantumCircuit(q)
+    for register in b:
+        qc.add_register(register)
+
+    #construct circuit using local and nonlocal gates
+    #gates on first qubit
+    qc.h(q[0])
+    qc.crz(2 * math.pi / pow(2, 2), q[1], q[0])
+    qc = qc.compose(swapgate(),[0, 1])
+    qc.crz(2 * math.pi / pow(2, 3), q[2], q[1])
+    qc = qc.compose(swapgate(), [1, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4)), [5, 4, 3, 2], [5, 4, 3, 2])
+    qc = qc.compose(swapgate(), [5, 6])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5)), [5, 4, 3, 0], [5, 4, 3, 0])
+    qc = qc.compose(swapgate(), [5, 6])
+    qc = qc.compose(swapgate(), [6, 7])
+    qc = qc.compose(swapgate(), [5, 6])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 6)), [5, 4, 3, 0], [5, 4, 3, 0])
+    qc = qc.compose(swapgate(), [5, 6])
+    qc = qc.compose(swapgate(), [6, 7])
     #gates on second qubit
     qc.h(q[1])
     qc.crz(2 * math.pi / pow(2, 2), q[2], q[1])
@@ -274,7 +328,7 @@ if __name__ == '__main__':
     circuit.initialize(qb5, 6)
     circuit.initialize(qb6, 7)
 
-    circuit = circuit.compose(qft_2n())
+    circuit = circuit.compose(qft_2n_L())
 
     circuit.measure(q[0], b[0])
     circuit.measure(q[1], b[1])
@@ -285,8 +339,8 @@ if __name__ == '__main__':
     circuit.measure(q[6], b[6])
     circuit.measure(q[7], b[7])
     #
-    # circuit.draw('mpl')
-    # plt.show()
+    circuit.draw('mpl')
+    plt.show()
 
     qi_job = execute(circuit, backend=qi_backend, shots=256)
     qi_result = qi_job.result()
