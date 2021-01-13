@@ -2,11 +2,11 @@ import math
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 
 
-def local_qft():
+def local_qft(init_states=[1, 1, 1, 1, 1, 1]):
     reg_size = 6
     q = QuantumRegister(reg_size)
 
-    # TODO: Is ClassicalRegister overhead negligable?
+    # TODO: Is ClassicalRegister overhead negligible?
     b0 = ClassicalRegister(1)
     b1 = ClassicalRegister(1)
     b2 = ClassicalRegister(1)
@@ -15,20 +15,17 @@ def local_qft():
     b5 = ClassicalRegister(1)
     qc = QuantumCircuit(q, b0, b1, b2, b3, b4, b5)
 
-    # TODO: Cleaner input through bitstring?
     zero_state = [1, 0]
-    # qc.initialize(zero_state, 2)
-    # qc.initialize(zero_state, 3)
-
     one_state = [0, 1]
-    qc.initialize(one_state, 0)
-    qc.initialize(one_state, 1)
-    qc.initialize(one_state, 4)
-    qc.initialize(one_state, 5)
-    qc.initialize(one_state, 2)
-    qc.initialize(one_state, 3)
 
-    # Can loop this such that
+    for i, state in enumerate(init_states):
+        if state == 0:
+            qc.initialize(zero_state, i)
+        # for now only basis states are supported
+        # TODO: add |+>, |->, |+i> & |-i>
+        else:
+            qc.initialize(one_state, i)
+
     # foreach psi 1->n:
     #   H , R2(q[psi+1])->R(n-psi)(n)
     # where R(n)(i) = crz(2 * math.pi / pow(2, 2), q[i] ...)
