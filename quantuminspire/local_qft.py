@@ -15,10 +15,8 @@ def local_qft():
     b5 = ClassicalRegister(1)
     qc = QuantumCircuit(q, b0, b1, b2, b3, b4, b5)
 
-    # qc = QuantumCircuit(q)
-
     # TODO: Cleaner input through bitstring?
-    # zero_state = [1, 0]
+    zero_state = [1, 0]
     # qc.initialize(zero_state, 2)
     # qc.initialize(zero_state, 3)
 
@@ -40,8 +38,9 @@ def local_qft():
         for j in range(reg_size - i-1):
             qc.crz(2 * math.pi / pow(2, 2+j), q[i+j+1], q[i])
 
-    # TODO: full reversal
-    # TODO: measure
+    # Bit-order reversal through swap gates
+    for i in range(0, int(reg_size/2)):
+        qc.swap(q[i], q[reg_size - i - 1])
 
     # print(qc)
     return qc
