@@ -1,12 +1,12 @@
 import os
 import math
 from getpass import getpass
-from quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
+from quantuminspire.src.quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
 
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from qiskit import execute
 
-from quantuminspire.qiskit import QI
+from quantuminspire.src.quantuminspire.qiskit import QI
 import matplotlib.pyplot as plt
 
 QI_EMAIL = os.getenv('QI_EMAIL')
@@ -161,6 +161,50 @@ def swapgate():
     qc.cx(q[0], q[1])
     return qc
 
+def qft_3n():
+    q = QuantumRegister(9)
+    b = [ClassicalRegister(1) for i in range(9)]
+    qc = QuantumCircuit(q)
+    for register in b:
+        qc.add_register(register)
+
+    #gates on the first qubit
+    qc.h(q[0])
+    qc.crz(2 * math.pi / pow(2, 2), q[1], q[0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [4, 3, 2, 0], [4, 3, 2, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4)), [5, 3, 2, 0], [5, 3, 2, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5)), [7, 6, 2, 0], [7, 6, 2, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 6)), [8, 6, 2, 0], [8, 6, 2, 0])
+
+    #gates on the second qubit
+    qc.h(q[1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2)), [4, 3, 2, 1], [4, 3, 2, 1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [5, 3, 2, 1], [5, 3, 2, 1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4)), [7, 6, 2, 1], [7, 6, 2, 1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5)), [8, 6, 2, 1], [8, 6, 2, 1])
+
+    #gates on the third qubit
+    qc.h(q[4])
+    qc.crz(2 * math.pi / pow(2, 2), q[5], q[4])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [7, 6, 3, 4], [7, 6, 3, 4])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4)), [8, 6, 3, 4], [8, 6, 3, 4])
+
+    #gates on the fourth qubit
+    qc.h(q[5])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2)), [7, 6, 3, 5], [7, 6, 3, 5])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [8, 6, 3, 5], [8, 6, 3, 5])
+
+    #gates on the fifth qubit
+    qc.h(q[7])
+    qc.crz(2 * math.pi / pow(2, 2), q[8], q[7])
+
+    #gates on the eigth qubit
+    qc.h(q[8])
+
+
+    return qc
+
+
 def qft_2n():
     #define (qu)bits
     q = QuantumRegister(8)
@@ -308,8 +352,42 @@ if __name__ == '__main__':
     # circuit.measure(q[4], b[4])
     # circuit.measure(q[5], b[5])
 
-    q = QuantumRegister(8)
-    b = [ClassicalRegister(1) for i in range(8)]
+    # q = QuantumRegister(8)
+    # b = [ClassicalRegister(1) for i in range(8)]
+    # circuit = QuantumCircuit(q)
+    # for register in b:
+    #     circuit.add_register(register)
+    #
+    # qb1 = [1, 0]
+    # qb2 = [1, 0]
+    # qb3 = [1, 0]
+    # qb4 = [1, 0]
+    # qb5 = [1, 0]
+    # qb6 = [1, 0]
+    #
+    # circuit.initialize(qb1, 0)
+    # circuit.initialize(qb2, 1)
+    # circuit.initialize(qb3, 2)
+    # circuit.initialize(qb4, 5)
+    # circuit.initialize(qb5, 6)
+    # circuit.initialize(qb6, 7)
+    #
+    # circuit = circuit.compose(qft_2n_L())
+    #
+    # circuit.measure(q[0], b[0])
+    # circuit.measure(q[1], b[1])
+    # circuit.measure(q[2], b[2])
+    # circuit.measure(q[3], b[3])
+    # circuit.measure(q[4], b[4])
+    # circuit.measure(q[5], b[5])
+    # circuit.measure(q[6], b[6])
+    # circuit.measure(q[7], b[7])
+
+    # circuit.draw('mpl')
+    # plt.show()
+
+    q = QuantumRegister(9)
+    b = [ClassicalRegister(1) for i in range(9)]
     circuit = QuantumCircuit(q)
     for register in b:
         circuit.add_register(register)
@@ -323,12 +401,12 @@ if __name__ == '__main__':
 
     circuit.initialize(qb1, 0)
     circuit.initialize(qb2, 1)
-    circuit.initialize(qb3, 2)
+    circuit.initialize(qb3, 4)
     circuit.initialize(qb4, 5)
-    circuit.initialize(qb5, 6)
-    circuit.initialize(qb6, 7)
+    circuit.initialize(qb5, 7)
+    circuit.initialize(qb6, 8)
 
-    circuit = circuit.compose(qft_2n_L())
+    circuit = circuit.compose(qft_3n())
 
     circuit.measure(q[0], b[0])
     circuit.measure(q[1], b[1])
@@ -338,9 +416,8 @@ if __name__ == '__main__':
     circuit.measure(q[5], b[5])
     circuit.measure(q[6], b[6])
     circuit.measure(q[7], b[7])
-    #
-    circuit.draw('mpl')
-    plt.show()
+    circuit.measure(q[8], b[8])
+
 
     qi_job = execute(circuit, backend=qi_backend, shots=256)
     qi_result = qi_job.result()
