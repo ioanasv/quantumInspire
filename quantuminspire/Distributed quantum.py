@@ -249,11 +249,11 @@ def qft_6n():
 
 def nonlocal_rk(theta):
     q = QuantumRegister(4)
-    c0 = ClassicalRegister(1)
-    c1 = ClassicalRegister(1)
-    c2 = ClassicalRegister(1)
-    c3 = ClassicalRegister(1)
-    qc = QuantumCircuit(q, c0, c1, c2, c3)
+    b0 = ClassicalRegister(1)
+    b1 = ClassicalRegister(1)
+    b2 = ClassicalRegister(1)
+    b3 = ClassicalRegister(1)
+    qc = QuantumCircuit(q,b0,b1,b2,b3)
     # qc.initialize(control, 0)
     # qc.initialize(target, 3)
     # zero_state = [1, 0]
@@ -263,18 +263,18 @@ def nonlocal_rk(theta):
     qc.h(q[1])
     qc.cx(q[1], q[2])
     qc.cx(q[0], q[1])
-    qc.measure(q[1], c1)
+    qc.measure(q[1],b1)
     qc.barrier(q[1], q[2])
 
-    qc.x(q[1]).c_if(c1, 1)
-    qc.x(q[2]).c_if(c1, 1)
+    qc.x(q[1]).c_if(b1, 1)
+    qc.x(q[2]).c_if(b1, 1)
     qc.crz(theta, q[2], q[3])
     qc.h(q[2])
-    qc.measure(q[2], c2)
+    qc.measure(q[2],b2)
     qc.barrier(q[0], q[2])
 
-    qc.z(q[0]).c_if(c2, 1)
-    qc.x(q[2]).c_if(c2, 1)
+    qc.z(q[0]).c_if(b2, 1)
+    qc.x(q[2]).c_if(b2, 1)
 
     return qc
 
