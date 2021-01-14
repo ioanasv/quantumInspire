@@ -1,12 +1,12 @@
 import os
 import math
 from getpass import getpass
-from quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
+from quantuminspire.src.quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
 
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from qiskit import execute
 
-from quantuminspire.qiskit import QI
+from quantuminspire.src.quantuminspire.qiskit import QI
 import matplotlib.pyplot as plt
 
 QI_EMAIL = os.getenv('QI_EMAIL')
@@ -263,18 +263,18 @@ def nonlocal_rk(theta):
     qc.h(q[1])
     qc.cx(q[1], q[2])
     qc.cx(q[0], q[1])
-    qc.measure(q[1], b1)
+    qc.measure(q[1], c1)
     qc.barrier(q[1], q[2])
 
-    qc.x(q[1]).c_if(b1, 1)
-    qc.x(q[2]).c_if(b1, 1)
+    qc.x(q[1]).c_if(c1, 1)
+    qc.x(q[2]).c_if(c1, 1)
     qc.crz(theta, q[2], q[3])
     qc.h(q[2])
-    qc.measure(q[2], b2)
+    qc.measure(q[2], c2)
     qc.barrier(q[0], q[2])
 
-    qc.z(q[0]).c_if(b2, 1)
-    qc.x(q[2]).c_if(b2, 1)
+    qc.z(q[0]).c_if(c2, 1)
+    qc.x(q[2]).c_if(c2, 1)
 
     return qc
 
@@ -308,37 +308,37 @@ if __name__ == '__main__':
     qi_backend = QI.get_backend('QX single-node simulator')
 
     # define (qu)bits
-    q = QuantumRegister(6)
-    b = [ClassicalRegister(1) for i in range(6)]
+    q = QuantumRegister(12)
+    b = [ClassicalRegister(1) for i in range(12)]
     qc = QuantumCircuit(q)
     for register in b:
         qc.add_register(register)
 
-    qb1 = [1, 0];
-    qb2 = [1, 0];
-    qb3 = [1, 0];
-    qb4 = [1, 0];
+    # qb1 = [1, 0];
+    # qb2 = [1, 0];
+    # qb3 = [1, 0];
+    # qb4 = [1, 0];
+    #
+    # qc.initialize(qb1, 0)
+    # qc.initialize(qb2, 1)
+    # qc.initialize(qb3, 4)
+    # qc.initialize(qb4, 5)
 
-    qc.initialize(qb1, 0)
-    qc.initialize(qb2, 1)
-    qc.initialize(qb3, 4)
-    qc.initialize(qb4, 5)
+    for i in range(12):
+        qc.initialize([1,0], i)
 
-    qc = qc.compose(qft2())
+    # qc = qc.compose(qft2())
+    qc = qc.compose(qft_6n())
 
-    qc.measure(q[0], b[0])
-    qc.measure(q[1], b[1])
-    qc.measure(q[2], b[2])
-    qc.measure(q[3], b[3])
-    qc.measure(q[4], b[4])
-    qc.measure(q[5], b[5])
+    for i in range(12):
+        qc.measure(q[i], b[i])
 
 
     qc.draw('mpl')
     plt.show()
 
 
-    qi_job = execute(qc, backend=qi_backend, shots=1000)
+    qi_job = execute(qc, backend=qi_backend, shots=256)
     qi_result = qi_job.result()
     histogram = qi_result.get_counts(qc)
     print('\nState\tCounts')
