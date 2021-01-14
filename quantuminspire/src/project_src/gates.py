@@ -1,6 +1,5 @@
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 
-
 def entangler(initial_state, circuit):
     circuit.initialize(initial_state, 0)
     zero_state = [1, 0]
@@ -8,6 +7,7 @@ def entangler(initial_state, circuit):
     circuit.initialize(zero_state, 2)
     circuit.initialize(zero_state, 3)
     circuit.initialize(zero_state, 4)
+    q = circuit.qubits
 
     circuit.h(q[1])
     circuit.cx(q[1], q[2])
@@ -25,6 +25,7 @@ def entangler(initial_state, circuit):
 
 
 def disentangler(circuit):
+    q = circuit.qubits
     circuit.h(q[2])
     circuit.h(q[3])
     circuit.h(q[4])
@@ -77,12 +78,6 @@ def nonlocal_rk(theta):
     b2 = ClassicalRegister(1)
     b3 = ClassicalRegister(1)
     qc = QuantumCircuit(q, b0, b1, b2, b3)
-    # qc.initialize(control, 0)
-    # qc.initialize(target, 3)
-    # zero_state = [1, 0]
-    # qc.initialize(zero_state, 1)
-    # qc.initialize(zero_state, 2)
-
     qc.h(q[1])
     qc.cx(q[1], q[2])
     qc.cx(q[0], q[1])
@@ -105,12 +100,6 @@ def nonlocal_cnot():
     b2 = ClassicalRegister(1)
     b3 = ClassicalRegister(1)
     qc = QuantumCircuit(q, b0, b1, b2, b3)
-    # qc.initialize(control, 0)
-    # qc.initialize(target, 3)
-    # zero_state = [1, 0]
-    # qc.initialize(zero_state, 1)
-    # qc.initialize(zero_state, 2)
-
     qc.h(q[1])
     qc.cx(q[1], q[2])
     qc.cx(q[0], q[1])
