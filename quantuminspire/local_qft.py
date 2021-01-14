@@ -2,9 +2,8 @@ import math
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 
 
-def local_qft(init_states=[1, 1, 1, 1, 1, 1]):
-    reg_size = 6
-    q = QuantumRegister(reg_size)
+def local_qft(qubit_count=6, init_states=[1, 1, 1, 1, 1, 1]):
+    q = QuantumRegister(qubit_count)
 
     # TODO: Is ClassicalRegister overhead negligible?
     b0 = ClassicalRegister(1)
@@ -30,14 +29,14 @@ def local_qft(init_states=[1, 1, 1, 1, 1, 1]):
     #   H , R2(q[psi+1])->R(n-psi)(n)
     # where R(n)(i) = crz(2 * math.pi / pow(2, 2), q[i] ...)
 
-    for i in range(0, reg_size):
+    for i in range(0, qubit_count):
         qc.h(q[i])
-        for j in range(reg_size - i-1):
+        for j in range(qubit_count - i - 1):
             qc.crz(2 * math.pi / pow(2, 2+j), q[i+j+1], q[i])
 
     # Bit-order reversal through swap gates
-    for i in range(0, int(reg_size/2)):
-        qc.swap(q[i], q[reg_size - i - 1])
+    for i in range(0, int(qubit_count / 2)):
+        qc.swap(q[i], q[qubit_count - i - 1])
 
     # print(qc)
     return qc
