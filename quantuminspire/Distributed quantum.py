@@ -210,6 +210,42 @@ def qft2():
     qc.h(q[5])
     return qc
 
+def qft_6n():
+    n_q = 12
+    q = QuantumRegister(n_q)
+    b = [ClassicalRegister(1) for i in range(n_q)]
+    qc = QuantumCircuit(q)
+    for register in b:
+        qc.add_register(register)
+
+    qc.h(q[0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2)), [2, 3, 1, 0], [2, 3, 1, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [4, 5, 1, 0], [4, 5, 1, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4)), [6, 7, 1, 0], [6, 7, 1, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5)), [8, 9, 1, 0], [8, 9, 1, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 6)), [10, 11, 1, 0], [10, 11, 1, 0])
+
+    qc.h(q[2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2)), [4, 5, 3, 2], [4, 5, 3, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [6, 7, 3, 2], [6, 7, 3, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4)), [8, 9, 3, 2], [8, 9, 3, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5)), [10, 11, 3, 2], [10, 11, 3, 2])
+
+    qc.h(q[4])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2)), [6, 7, 5, 4], [6, 7, 5, 4])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [8, 9, 5, 4], [8, 9, 5, 4])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4)), [10, 11, 5, 4], [10, 11, 5, 4])
+
+    qc.h(q[6])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2)), [8, 9, 7, 6], [8, 9, 7, 6])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [10, 11, 7, 6], [10, 11, 7, 6])
+
+    qc.h(q[8])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3)), [10, 11, 9, 8], [10, 11, 9, 8])
+
+    qc.h(q[10])
+
+    return qc
 
 def nonlocal_rk(theta):
     q = QuantumRegister(4)
@@ -227,14 +263,18 @@ def nonlocal_rk(theta):
     qc.h(q[1])
     qc.cx(q[1], q[2])
     qc.cx(q[0], q[1])
-    qc.measure(q[1], c1)
-    qc.x(q[1]).c_if(c1, 1)
-    qc.x(q[2]).c_if(c1, 1)
+    qc.measure(q[1], b1)
+    qc.barrier(q[1], q[2])
+
+    qc.x(q[1]).c_if(b1, 1)
+    qc.x(q[2]).c_if(b1, 1)
     qc.crz(theta, q[2], q[3])
     qc.h(q[2])
-    qc.measure(q[2], c2)
-    qc.z(q[0]).c_if(c2, 1)
-    qc.x(q[2]).c_if(c2, 1)
+    qc.measure(q[2], b2)
+    qc.barrier(q[0], q[2])
+
+    qc.z(q[0]).c_if(b2, 1)
+    qc.x(q[2]).c_if(b2, 1)
 
     return qc
 
