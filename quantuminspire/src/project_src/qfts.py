@@ -176,3 +176,44 @@ def qft_2n_L():
     # gates on sixth qubit
     qc.h(q[7])
     return qc
+
+
+def qft_arbitraryn(n_nodes, n_qpn):
+    """
+    Makes a distributed quantum fourier transform circuit, with an arbitrary amount of nodes and qubits per node. It
+    assumes there is one communication qubit per node that is connected to every other communication qubit in every
+    other node.
+    :param n_nodes: amount of nodes, must be an integer and 1 or higher
+    :param n_qpn: amount of qubits per node, including the communication qubit, must be an integer and 2 or higher
+    :return: qc: a n_nodes*n_qpn qubit distributed qft circuit
+    """
+
+    n_total = n_nodes * n_qpn
+    n_input = n_total - n_nodes
+
+    q = QuantumRegister(n_total)
+    b = [ClassicalRegister(1) for i in range(n_total)]
+    qc = QuantumCircuit(q)
+    for register in b:
+        qc.add_register(register)
+
+    for i in range(n_input):
+        # find the index of total qubits i_q  corresponding to the index of the input qubits i
+        i_q = i + (i // (n_qpn - 1))
+
+        qc.h(i_q)
+
+        for k in range(n_input - i - 1):
+            # check if required control qubit is in same node as target qubit, if so, do local gate, if not, non-local
+            if i % (n_qpn - 1) + k < n_qpn - 2:
+                qc.crz(2 * math.pi / pow(2, 2 + k), q[i_q + 1 + k], q[i_q])
+                # print("making local RK gate from {} to {}".format(i, i + k + 1))
+            else:
+                # find index of the required control qubit
+                i_controlq = i + k + 1 + ((i + k + 1) // (n_qpn-1))
+
+                qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2 + k)),
+                                [i_controlq, ((i_controlq // n_qpn) + 1)*n_qpn - 1, ((i_q // n_qpn) + 1)*n_qpn - 1, i_q],
+                                [i_controlq, ((i_controlq // n_qpn) + 1)*n_qpn - 1, ((i_q // n_qpn) + 1)*n_qpn - 1, i_q])
+                # print("making non-local RK gate from {} to {}, controlq {}, commcontrolq {}, commtargetq {}, targetq {}".format(i, i + k + 1, i_controlq, ((i_controlq // n_qpn) + 1)*n_qpn - 1, ((i_q // n_qpn) + 1)*n_qpn - 1, i_q))
+    return qc
