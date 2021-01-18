@@ -1,5 +1,6 @@
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 
+
 def entangler(initial_state, circuit):
     circuit.initialize(initial_state, 0)
     zero_state = [1, 0]
@@ -61,10 +62,12 @@ def teleport(state):
     qc.cx(q[1], q[2])
     qc.cx(q[0], q[1])
     qc.measure(q[1], b1)
+    qc.barrier(q[1], q[2])
     qc.x(q[1]).c_if(b1, 1)
     qc.x(q[2]).c_if(b1, 1)
     qc.h(q[0])
     qc.measure(q[0], b0)
+    qc.barrier(q[0], q[2])
     qc.x(q[0]).c_if(b0, 1)
     qc.x(q[2]).c_if(b0, 1)
     qc.swap(q[2], q[3])
@@ -82,11 +85,13 @@ def nonlocal_rk(theta):
     qc.cx(q[1], q[2])
     qc.cx(q[0], q[1])
     qc.measure(q[1], b1)
+    qc.barrier(q[1], q[2])
     qc.x(q[1]).c_if(b1, 1)
     qc.x(q[2]).c_if(b1, 1)
     qc.crz(theta, q[2], q[3])
     qc.h(q[2])
     qc.measure(q[2], b2)
+    qc.barrier(q[0], q[2])
     qc.z(q[0]).c_if(b2, 1)
     qc.x(q[2]).c_if(b2, 1)
 
@@ -104,11 +109,13 @@ def nonlocal_cnot():
     qc.cx(q[1], q[2])
     qc.cx(q[0], q[1])
     qc.measure(q[1], b1)
+    qc.barrier(q[1], q[2])
     qc.x(q[1]).c_if(b1, 1)
     qc.x(q[2]).c_if(b1, 1)
     qc.cx(q[2], q[3])
     qc.h(q[2])
     qc.measure(q[2], b2)
+    qc.barrier(q[0], q[2])
     qc.z(q[0]).c_if(b2, 1)
     qc.x(q[2]).c_if(b2, 1)
 
