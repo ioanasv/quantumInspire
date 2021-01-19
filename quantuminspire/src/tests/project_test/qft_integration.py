@@ -51,11 +51,9 @@ def get_authentication():
         return get_basic_authentication(email, password)
 
 
-class MyTestCase(unittest.TestCase):
-    def test_something(self):
-        self.assertEqual(True, True)
+class QftIntegrationTests(unittest.TestCase):
 
-    def test_qft(self):
+    def test_qft_2n(self):
         authentication = get_authentication()
         QI.set_authentication(authentication, QI_URL)
         qi_backend = QI.get_backend('QX single-node simulator')
@@ -105,6 +103,58 @@ class MyTestCase(unittest.TestCase):
         for i, prob in enumerate(qubit_probabilities(histogram)):
             print(i, " is |1> with probability ", prob)
         self.assertEqual(True, True)
+
+    def test_qft_3n(self):
+            authentication = get_authentication()
+            QI.set_authentication(authentication, QI_URL)
+            qi_backend = QI.get_backend('QX single-node simulator')
+
+            qubit_count = 9
+            q = QuantumRegister(qubit_count)
+            b = [ClassicalRegister(1) for i in range(qubit_count)]
+            circuit = QuantumCircuit(q)
+            for register in b:
+                circuit.add_register(register)
+
+            qb1 = [1, 0]
+            qb2 = [1, 0]
+            qb3 = [1, 0]
+            qb4 = [1, 0]
+            qb5 = [1, 0]
+            qb6 = [1, 0]
+            # qb1 = [0, 1]
+            # qb2 = [0, 1]
+            # qb3 = [0, 1]
+            # qb4 = [0, 1]
+            # qb5 = [0, 1]
+            # qb6 = [0, 1]
+
+            circuit.initialize(qb1, 0)
+            circuit.initialize(qb2, 1)
+            circuit.initialize(qb3, 4)
+            circuit.initialize(qb4, 5)
+            circuit.initialize(qb5, 7)
+            circuit.initialize(qb6, 8)
+
+            circuit = circuit.compose(qft_3n())
+
+            circuit.measure(q[0], b[0])
+            circuit.measure(q[1], b[1])
+            circuit.measure(q[2], b[2])
+            circuit.measure(q[3], b[3])
+            circuit.measure(q[4], b[4])
+            circuit.measure(q[5], b[5])
+            circuit.measure(q[6], b[6])
+            circuit.measure(q[7], b[7])
+            circuit.measure(q[8], b[8])
+
+            qi_job = execute(circuit, backend=qi_backend, shots=256)
+            qi_result = qi_job.result()
+            histogram = qi_result.get_counts(circuit)
+
+            for i, prob in enumerate(qubit_probabilities(histogram)):
+                print(i, " is |1> with probability ", prob)
+            self.assertEqual(True, True)
 
 
 if __name__ == '__main__':
