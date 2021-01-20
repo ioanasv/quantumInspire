@@ -8,6 +8,7 @@ from qiskit import execute
 from quantuminspire.src.quantuminspire.qiskit import QI
 from quantuminspire.src.project_src.qfts import *
 import numpy as np
+from qiskit.circuit.library import QFT
 
 QI_EMAIL = os.getenv('QI_EMAIL')
 QI_PASSWORD = os.getenv('QI_PASSWORD')
@@ -155,6 +156,51 @@ class QftIntegrationTests(unittest.TestCase):
             for i, prob in enumerate(qubit_probabilities(histogram)):
                 print(i, " is |1> with probability ", prob)
             self.assertEqual(True, True)
+
+    def test_qft_2n_inverse(self):
+        authentication = get_authentication()
+        QI.set_authentication(authentication, QI_URL)
+        qi_backend = QI.get_backend('QX single-node simulator')
+
+        qubit_count = 8
+        q = QuantumRegister(qubit_count)
+        b = [ClassicalRegister(1) for i in range(qubit_count)]
+        circuit = QuantumCircuit(q)
+        for register in b:
+            circuit.add_register(register)
+
+        one = [0, 1]
+        zero = [1, 0]
+
+        circuit.initialize(one, 0)
+        circuit.initialize(one, 1)
+        circuit.initialize(one, 2)
+        circuit.initialize(one, 5)
+        circuit.initialize(one, 6)
+        circuit.initialize(one, 7)
+
+        circuit = circuit.compose(qft_2n())
+
+        # construct and add native inverse qft
+        inverse_qft = QFT(num_qubits=6, inverse=True, do_swaps=False)
+        circuit = circuit.compose(inverse_qft, qubits=[0, 1, 2, 5, 6, 7])
+
+        circuit.measure(q[0], b[0])
+        circuit.measure(q[1], b[1])
+        circuit.measure(q[2], b[2])
+        circuit.measure(q[3], b[3])
+        circuit.measure(q[4], b[4])
+        circuit.measure(q[5], b[5])
+        circuit.measure(q[6], b[6])
+        circuit.measure(q[7], b[7])
+
+        qi_job = execute(circuit, backend=qi_backend, shots=256)
+        qi_result = qi_job.result()
+        histogram = qi_result.get_counts(circuit)
+
+        for i, prob in enumerate(qubit_probabilities(histogram)):
+            print(i, " is |1> with probability ", prob)
+        self.assertEqual(True, True)
 
 
 if __name__ == '__main__':
