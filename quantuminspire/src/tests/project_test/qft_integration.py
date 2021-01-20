@@ -1,6 +1,9 @@
 import unittest
 import os
 from getpass import getpass
+
+from scipy import rand
+
 from quantuminspire.src.quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
 
 from qiskit import execute
@@ -206,25 +209,24 @@ class QftIntegrationTests(unittest.TestCase):
         QI.set_authentication(authentication, QI_URL)
         qi_backend = QI.get_backend('QX single-node simulator')
 
-        q = QuantumRegister(6)
-        b = [ClassicalRegister(1) for i in range(6)]
+        n_total = 6
+        q = QuantumRegister(n_total)
+        b = [ClassicalRegister(1) for i in range(n_total)]
         circuit = QuantumCircuit(q)
         for register in b:
             circuit.add_register(register)
 
-        input = [0, 0, 0, 0, 1, 1]
-        circuit = circuit.compose(local_qft(6, input))
+        # this list is used for circuit input and for output correction
+        input = input = [int(0.5 + rand()) for i in range(n_total)]
+        circuit = circuit.compose(local_qft(n_total, input))
 
         # construct and add native inverse qft
         inverse_qft = QFT(num_qubits=6, inverse=True, do_swaps=True)
         circuit = circuit.compose(inverse_qft)
 
-        circuit.measure(q[0], b[0])
-        circuit.measure(q[1], b[1])
-        circuit.measure(q[2], b[2])
-        circuit.measure(q[3], b[3])
-        circuit.measure(q[4], b[4])
-        circuit.measure(q[5], b[5])
+        for i in range(n_total):
+            circuit.measure(q[i], b[i])
+
 
         qi_job = execute(circuit, backend=qi_backend, shots=256)
         qi_result = qi_job.result()
@@ -238,6 +240,72 @@ class QftIntegrationTests(unittest.TestCase):
         right_answers = [int(a) == int(b) for (a, b) in zip (result_probabilities, input)]
         self.assertEqual(False, right_answers.__contains__(False))
 
+    def test_arbitraryn_qft_inverse(self):
+        authentication = get_authentication()
+        QI.set_authentication(authentication, QI_URL)
+        qi_backend = QI.get_backend('QX single-node simulator')
+
+        n_nodes = 2
+        n_qpn = 4
+        n_total = n_nodes * n_qpn
+
+        q = QuantumRegister(n_total)
+        b = [ClassicalRegister(1) for i in range(n_total)]
+        circuit = QuantumCircuit(q)
+        for register in b:
+            circuit.add_register(register)
+
+        # this list is used for circuit input and for output correction
+        input = []
+        for i in range(n_total):
+            if not (i % n_qpn) == n_qpn - 1:
+                input.append(int(0.5 + rand()))
+            else:
+                input.append(0)
+
+        zero_state = [1, 0]
+        one_state = [0, 1]
+        for i, state in enumerate(input):
+            if state == 0:
+                circuit.initialize(zero_state, i)
+            else:
+                circuit.initialize(one_state, i)
+
+
+        circuit = circuit.compose(qft_arbitraryn(n_nodes, n_qpn))
+
+        # construct and add native inverse qft
+        communication_qubit_indices = [n_qpn - 1 + i*n_qpn for i in range(n_nodes)]
+        computation_qubit_indices = list(range(n_total))
+
+        for index in communication_qubit_indices:
+            computation_qubit_indices.remove(index)
+
+        inverse_qft = QFT(num_qubits=n_total - n_nodes, inverse=True, do_swaps=False)
+        circuit = circuit.compose(inverse_qft, qubits=computation_qubit_indices)
+
+        for i in range(n_total):
+            circuit.measure(q[i], b[i])
+        # circuit.measure(q[0], b[0])
+        # circuit.measure(q[1], b[1])
+        # circuit.measure(q[2], b[2])
+        # circuit.measure(q[3], b[3])
+        # circuit.measure(q[4], b[4])
+        # circuit.measure(q[5], b[5])
+
+        qi_job = execute(circuit, backend=qi_backend, shots=256)
+        qi_result = qi_job.result()
+        histogram = qi_result.get_counts(circuit)
+        print("Input was: ", input)
+        print("Result histogram: ", histogram)
+
+        result_probabilities = qubit_probabilities(histogram)
+        # Need to reverse order because local_qft does so
+        result_probabilities.reverse()
+        for i, prob in enumerate(result_probabilities):
+            print(i, " is |1> with probability ", prob)
+        right_answers = [int(a) == int(b) for (a, b) in zip(result_probabilities, input)]
+        self.assertEqual(False, right_answers.__contains__(False))
 
 if __name__ == '__main__':
     unittest.main()
