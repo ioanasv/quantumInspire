@@ -32,7 +32,7 @@ def qubit_probabilities(histogram):
     # print(zeros, ones)
     means_list = [float(one) / float(zero+one) for (zero, one) in zip(zeros, ones)]
     # print(means_list)
-    return np.array(means_list)
+    return means_list
 
 
 def get_authentication():
@@ -192,7 +192,6 @@ class QftIntegrationTests(unittest.TestCase):
         circuit.measure(q[4], b[4])
         circuit.measure(q[5], b[5])
         circuit.measure(q[6], b[6])
-        circuit.measure(q[7], b[7])
 
         qi_job = execute(circuit, backend=qi_backend, shots=256)
         qi_result = qi_job.result()
@@ -201,6 +200,43 @@ class QftIntegrationTests(unittest.TestCase):
         for i, prob in enumerate(qubit_probabilities(histogram)):
             print(i, " is |1> with probability ", prob)
         self.assertEqual(True, True)
+
+    def test_local_qft_inverse(self):
+        authentication = get_authentication()
+        QI.set_authentication(authentication, QI_URL)
+        qi_backend = QI.get_backend('QX single-node simulator')
+
+        q = QuantumRegister(6)
+        b = [ClassicalRegister(1) for i in range(6)]
+        circuit = QuantumCircuit(q)
+        for register in b:
+            circuit.add_register(register)
+
+        input = [0, 0, 0, 0, 1, 1]
+        circuit = circuit.compose(local_qft(6, input))
+
+        # construct and add native inverse qft
+        inverse_qft = QFT(num_qubits=6, inverse=True, do_swaps=True)
+        circuit = circuit.compose(inverse_qft)
+
+        circuit.measure(q[0], b[0])
+        circuit.measure(q[1], b[1])
+        circuit.measure(q[2], b[2])
+        circuit.measure(q[3], b[3])
+        circuit.measure(q[4], b[4])
+        circuit.measure(q[5], b[5])
+
+        qi_job = execute(circuit, backend=qi_backend, shots=256)
+        qi_result = qi_job.result()
+        histogram = qi_result.get_counts(circuit)
+
+        result_probabilities = qubit_probabilities(histogram)
+        # Need to reverse order because local_qft does so
+        result_probabilities.reverse()
+        for i, prob in enumerate(result_probabilities):
+            print(i, " is |1> with probability ", prob)
+        right_answers = [int(a) == int(b) for (a, b) in zip (result_probabilities, input)]
+        self.assertEqual(False, right_answers.__contains__(False))
 
 
 if __name__ == '__main__':
