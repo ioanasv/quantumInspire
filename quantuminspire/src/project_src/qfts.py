@@ -1,6 +1,6 @@
 import math
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
-from quantuminspire.src.project_src.gates import *
+from gates import *
 
 
 def local_qft(qubit_count=6, init_states=[1, 1, 1, 1, 1, 1]):

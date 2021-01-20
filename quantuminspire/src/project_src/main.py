@@ -1,12 +1,19 @@
 import os
-from getpass import getpass
-from quantuminspire.src.quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
+import math
+# from getpass import getpass
+# from quantuminspire.src.quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
 
 from qiskit import execute
 
-from quantuminspire.src.quantuminspire.qiskit import QI
-from quantuminspire.src.project_src.qfts import *
+# from quantuminspire.src.quantuminspire.qiskit import QI
+from qfts import *
 import matplotlib.pyplot as plt
+
+from qiskit.quantum_info import state_fidelity
+from qiskit.providers.aer.extensions.snapshot_statevector import *
+from qiskit.providers.aer.noise import depolarizing_error
+from qiskit.providers.aer.noise import NoiseModel
+from qiskit import IBMQ, Aer
 
 QI_EMAIL = os.getenv('QI_EMAIL')
 QI_PASSWORD = os.getenv('QI_PASSWORD')
@@ -28,11 +35,81 @@ def get_authentication():
             email, password = QI_EMAIL, QI_PASSWORD
         return get_basic_authentication(email, password)
 
+def create_error(qubits, intensity):
+    # make an empty noise model
+    noise_model = NoiseModel()
+
+    # Add depolarizing error to all single qubits
+    error = depolarizing_error(intensity, 1)
+    for i in range(qubits):
+        noise_model.add_quantum_error(error, ['h', 'x', 'measure'], [i])
+
+    # Add depolareizing error for double gates
+    error = depolarizing_error(intensity, 2)
+    for i in range(qubits):
+        for j in range(i):
+            if j != i:
+                noise_model.add_quantum_error(error, ['cx'], [i, j])
+
+    # Print noise model info
+    print(noise_model)
+    return noise_model
+
+def Fidelity_calc(qubits, intensity, n_nodes):
+    input_qubits = qubits - n_nodes
+    node_qubits = int(qubits / n_nodes)
+
+    #define single qubit inputstates
+    state1 = [1, 0]
+    state2 = [math.sqrt(1/2), math.sqrt(1/2)]
+    state3 = [math.sqrt(1/2), - math.sqrt(1/2)]
+    state4 = [math.sqrt(1/2), 1j * math.sqrt(1/2)]
+    state5 = [math.sqrt(1/2), -1j * math.sqrt(1/2)]
+    state6 = [0, 1]
+
+    states = [state1, state2, state3, state4, state5, state6]
+    print(states)
+    print(states[0])
+
+    #make a qft circuit
+    q = QuantumRegister(qubits)
+    b = [ClassicalRegister(1) for i in range(qubits)]
+    circuit = QuantumCircuit(q)
+    for register in b:
+        circuit.add_register(register)
+
+    # make a teststate of control qubits
+    teststate = []
+    for i in range(input_qubits):
+        teststate.append(states[3])
+
+    #initialize control qubits
+    for i in range(n_nodes):
+        for j in range(node_qubits-1):
+            circuit.initialize(teststate[(i * (node_qubits-1) + j)], (i * node_qubits + j))
+
+    circuit = circuit.compose(qft_arbitraryn(n_nodes, node_qubits))
+    circuit.snapshot_statevector('snapshot')
+
+    print("\nResult from the local Qiskit simulator backend:\n")
+    backend = Aer.get_backend("qasm_simulator")
+    result1 = execute(circuit, backend=backend, shots=1000).result()
+
+    baselinestate = result1.data()['snapshots']['statevector']['snapshot'][0]
+    print(baselinestate)
+
+    error_model = create_error(qubits, intensity)
+    result2 = execute(circuit, backend=backend, shots=1000, noise_model=error_model).result()
+    errorstate = result2.data()['snapshots']['statevector']['snapshot'][0]
+    print(errorstate)
+
+    F = state_fidelity(baselinestate, errorstate)
+    print(F)
+    return F
 
 if __name__ == '__main__':
-    authentication = get_authentication()
-    QI.set_authentication(authentication, QI_URL)
-    qi_backend = QI.get_backend('QX single-node simulator')
+    noise_model = create_error(8, 0.05)
+    F = Fidelity_calc(4, 0.05, 2)
 
     q = QuantumRegister(8)
     b = [ClassicalRegister(1) for i in range(8)]
@@ -65,16 +142,16 @@ if __name__ == '__main__':
     circuit.measure(q[6], b[6])
     circuit.measure(q[7], b[7])
 
-    circuit.draw('mpl')
-    plt.show()
+    # circuit.draw('mpl')
+    # plt.show()
 
 
-    qi_job = execute(circuit, backend=qi_backend, shots=256)
-    qi_result = qi_job.result()
-    histogram = qi_result.get_counts(circuit)
-    print('\nState\tCounts')
-    [print('{0}\t\t{1}'.format(state, counts)) for state, counts in histogram.items()]
-    # Print the full state probabilities histogram
-    probabilities_histogram = qi_result.get_probabilities(circuit)
-    print('\nState\tProbabilities')
-    [print('{0}\t\t{1}'.format(state, val)) for state, val in probabilities_histogram.items()]
+    # qi_job = execute(circuit, backend=qi_backend, shots=256)
+    # qi_result = qi_job.result()
+    # histogram = qi_result.get_counts(circuit)
+    # print('\nState\tCounts')
+    # [print('{0}\t\t{1}'.format(state, counts)) for state, counts in histogram.items()]
+    # # Print the full state probabilities histogram
+    # probabilities_histogram = qi_result.get_probabilities(circuit)
+    # print('\nState\tProbabilities')
+    # [print('{0}\t\t{1}'.format(state, val)) for state, val in probabilities_histogram.items()]
