@@ -1,6 +1,7 @@
 import os
 import math
 import random
+import numpy as np
 # from getpass import getpass
 # from quantuminspire.src.quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
 
@@ -174,6 +175,8 @@ def fidelity_calc2():
     # # plt.show()
     #
     print(F)
+    A = np.avarage(F)
+    print(A)
     return F
 
 if __name__ == '__main__':
@@ -183,7 +186,7 @@ if __name__ == '__main__':
     # # fidelity for circuit with 6 input qubits and 3 nodes
     # F = Fidelity_calc(9, 0.005, 3)
 
-    fidelity_calc2()
+    # fidelity_calc2()
     q = QuantumRegister(8)
     b = [ClassicalRegister(1) for i in range(8)]
     circuit = QuantumCircuit(q)
@@ -204,7 +207,7 @@ if __name__ == '__main__':
     circuit.initialize(qb5, 6)
     circuit.initialize(qb6, 7)
 
-    circuit = circuit.compose(qft_2n_L())
+    circuit = circuit.compose(qft_arbitraryn(2, 4, 0.1))
 
     circuit.measure(q[0], b[0])
     circuit.measure(q[1], b[1])
@@ -215,8 +218,8 @@ if __name__ == '__main__':
     circuit.measure(q[6], b[6])
     circuit.measure(q[7], b[7])
 
-    # circuit.draw('mpl')
-    # plt.show()
+    circuit.draw('mpl')
+    plt.show()
 
 
     # qi_job = execute(circuit, backend=qi_backend, shots=256)

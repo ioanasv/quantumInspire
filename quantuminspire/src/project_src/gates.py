@@ -71,7 +71,7 @@ def teleport(state):
     return qc
 
 
-def nonlocal_rk(theta):
+def nonlocal_rk(theta, error):
     q = QuantumRegister(4)
     b0 = ClassicalRegister(1)
     b1 = ClassicalRegister(1)
@@ -84,7 +84,7 @@ def nonlocal_rk(theta):
     qc.measure(q[1], b1)
     qc.x(q[1]).c_if(b1, 1)
     qc.x(q[2]).c_if(b1, 1)
-    qc.crz(theta, q[2], q[3])
+    qc.crz(theta * (1 + error), q[2], q[3])
     qc.h(q[2])
     qc.measure(q[2], b2)
     qc.z(q[0]).c_if(b2, 1)
