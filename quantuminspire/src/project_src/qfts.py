@@ -2,6 +2,8 @@ import math
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from gates import *
 
+from quantuminspire.src.project_src.gates import nonlocal_rk
+
 
 def local_qft(qubit_count=6, init_states=[1, 1, 1, 1, 1, 1]):
     q = QuantumRegister(qubit_count)
@@ -221,7 +223,7 @@ def qft_2n_L():
     return qc
 
 
-def qft_arbitraryn(n_nodes, n_qpn, error):
+def qft_arbitraryn(n_nodes, n_qpn, error=0):
     """
     Makes a distributed quantum fourier transform circuit, with an arbitrary amount of nodes and qubits per node. It
     assumes there is one communication qubit per node that is connected to every other communication qubit in every
