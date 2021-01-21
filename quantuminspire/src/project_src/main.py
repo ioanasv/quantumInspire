@@ -49,13 +49,18 @@ def create_error(qubits, intensity):
     for i in range(qubits):
         for j in range(i):
             if j != i:
-                noise_model.add_quantum_error(error, ['cx'], [i, j])
+                noise_model.add_quantum_error(error, ['cx', 'crz'], [i, j])
 
-    # Print noise model info
-    print(noise_model)
     return noise_model
 
 def Fidelity_calc(qubits, intensity, n_nodes):
+    """
+        calculate the fidelity between output of circuit with and without error
+        :param n_nodes: amount of nodes, must be an integer and 1 or higher
+        :param qubits: total amount of qubits (input qubits plus 1 communication qubit per node)
+        :return: F: fidelity
+        """
+
     input_qubits = qubits - n_nodes
     node_qubits = int(qubits / n_nodes)
 
@@ -68,8 +73,6 @@ def Fidelity_calc(qubits, intensity, n_nodes):
     state6 = [0, 1]
 
     states = [state1, state2, state3, state4, state5, state6]
-    print(states)
-    print(states[0])
 
     #make a qft circuit
     q = QuantumRegister(qubits)
@@ -91,25 +94,29 @@ def Fidelity_calc(qubits, intensity, n_nodes):
     circuit = circuit.compose(qft_arbitraryn(n_nodes, node_qubits))
     circuit.snapshot_statevector('snapshot')
 
+    circuit.draw('mpl')
+    plt.show()
+
     print("\nResult from the local Qiskit simulator backend:\n")
     backend = Aer.get_backend("qasm_simulator")
     result1 = execute(circuit, backend=backend, shots=1000).result()
 
     baselinestate = result1.data()['snapshots']['statevector']['snapshot'][0]
-    print(baselinestate)
 
     error_model = create_error(qubits, intensity)
     result2 = execute(circuit, backend=backend, shots=1000, noise_model=error_model).result()
     errorstate = result2.data()['snapshots']['statevector']['snapshot'][0]
-    print(errorstate)
 
     F = state_fidelity(baselinestate, errorstate)
     print(F)
     return F
 
 if __name__ == '__main__':
-    noise_model = create_error(8, 0.05)
-    F = Fidelity_calc(4, 0.05, 2)
+    #fidelity for circuit with 6 input qubits and 2 nodes
+    F = Fidelity_calc(8, 0.005, 2)
+
+    # fidelity for circuit with 6 input qubits and 3 nodes
+    F = Fidelity_calc(9, 0.005, 3)
 
     q = QuantumRegister(8)
     b = [ClassicalRegister(1) for i in range(8)]
