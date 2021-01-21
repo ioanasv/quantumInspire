@@ -1,22 +1,44 @@
 import os
 import math
-import random
-import numpy as np
-# from getpass import getpass
-# from quantuminspire.src.quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
+from getpass import getpass
+from quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
 
+from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from qiskit import execute
+from qiskit import IBMQ, Aer
 
-# from quantuminspire.src.quantuminspire.qiskit import QI
-from qfts import *
+from quantuminspire.qiskit import QI
 import matplotlib.pyplot as plt
 
 from qiskit.quantum_info import state_fidelity
 from qiskit.providers.aer.extensions.snapshot_statevector import *
-from qiskit.providers.aer.noise import depolarizing_error
-from qiskit.providers.aer.noise import NoiseModel
-from qiskit import IBMQ, Aer
-from qiskit.visualization import plot_bloch_multivector
+
+from qfts import *
+from fidelity import *
+
+QI_EMAIL = os.getenv('QI_EMAIL')
+QI_PASSWORD = os.getenv('QI_PASSWORD')
+QI_URL = os.getenv('API_URL', 'https://api.quantum-inspire.com/')
+# import os
+# import math
+# import random
+# import numpy as np
+# # from getpass import getpass
+# # from quantuminspire.src.quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
+#
+# from qiskit import execute
+#
+# # from quantuminspire.src.quantuminspire.qiskit import QI
+# from qfts import *
+# from fidelity import *
+# import matplotlib.pyplot as plt
+#
+# from qiskit.quantum_info import state_fidelity
+# from qiskit.providers.aer.extensions.snapshot_statevector import *
+# from qiskit.providers.aer.noise import depolarizing_error
+# from qiskit.providers.aer.noise import NoiseModel
+# from qiskit import IBMQ, Aer
+# from qiskit.visualization import plot_bloch_multivector
 
 QI_EMAIL = os.getenv('QI_EMAIL')
 QI_PASSWORD = os.getenv('QI_PASSWORD')
@@ -95,17 +117,18 @@ def Fidelity_calc(qubits, intensity, n_nodes):
         for j in range(node_qubits-1):
             circuit.initialize(teststate[(i * (node_qubits-1) + j)], (i * node_qubits + j))
 
+    circuit.snapshot_statevector('snapshot1')
     circuit = circuit.compose(qft_arbitraryn(n_nodes, node_qubits))
-    circuit.snapshot_statevector('snapshot')
+    circuit.snapshot_statevector('snapshot2')
 
     circuit.draw('mpl')
     plt.show()
 
     print("\nResult from the local Qiskit simulator backend:\n")
     backend = Aer.get_backend("qasm_simulator")
-    result1 = execute(circuit, backend=backend, shots=1000).result()
+    result = execute(circuit, backend=backend, shots=1000).result()
 
-    baselinestate = result1.data()['snapshots']['statevector']['snapshot'][0]
+    baselinestate = result.data()['snapshots']['statevector']['snapshot1'][0]
 
     error_model = create_error(qubits, intensity)
     result2 = execute(circuit, backend=backend, shots=1000, noise_model=error_model).result()
@@ -129,7 +152,7 @@ def fidelity_calc2():
 
     #for all possible inputstates
     F = []
-
+    print(1)
     for j in range(100):
         teststate = []
         for i in range(6):
@@ -144,7 +167,7 @@ def fidelity_calc2():
             circuit1.add_register(register)
             circuit2.add_register(register)
 
-
+        print(2)
         # initialize control qubits
         for i in range(n_nodes):
             for j in range(node_qubits - 1):
@@ -180,54 +203,12 @@ def fidelity_calc2():
     return F
 
 if __name__ == '__main__':
-    # #fidelity for circuit with 6 input qubits and 2 nodes
-    # F = Fidelity_calc(8, 0.005, 2)
-    #
-    # # fidelity for circuit with 6 input qubits and 3 nodes
-    # F = Fidelity_calc(9, 0.005, 3)
 
-    # fidelity_calc2()
-    q = QuantumRegister(8)
-    b = [ClassicalRegister(1) for i in range(8)]
-    circuit = QuantumCircuit(q)
-    for register in b:
-        circuit.add_register(register)
+    authentication = get_authentication()
+    QI.set_authentication(authentication, QI_URL)
+    qi_backend = QI.get_backend('QX single-node simulator')
 
-    qb1 = [1, 0]
-    qb2 = [1, 0]
-    qb3 = [1, 0]
-    qb4 = [1, 0]
-    qb5 = [1, 0]
-    qb6 = [1, 0]
-
-    circuit.initialize(qb1, 0)
-    circuit.initialize(qb2, 1)
-    circuit.initialize(qb3, 2)
-    circuit.initialize(qb4, 5)
-    circuit.initialize(qb5, 6)
-    circuit.initialize(qb6, 7)
-
-    circuit = circuit.compose(qft_arbitraryn(2, 4, 0.1))
-
-    circuit.measure(q[0], b[0])
-    circuit.measure(q[1], b[1])
-    circuit.measure(q[2], b[2])
-    circuit.measure(q[3], b[3])
-    circuit.measure(q[4], b[4])
-    circuit.measure(q[5], b[5])
-    circuit.measure(q[6], b[6])
-    circuit.measure(q[7], b[7])
-
-    circuit.draw('mpl')
-    plt.show()
-
-
-    # qi_job = execute(circuit, backend=qi_backend, shots=256)
-    # qi_result = qi_job.result()
-    # histogram = qi_result.get_counts(circuit)
-    # print('\nState\tCounts')
-    # [print('{0}\t\t{1}'.format(state, counts)) for state, counts in histogram.items()]
-    # # Print the full state probabilities histogram
-    # probabilities_histogram = qi_result.get_probabilities(circuit)
-    # print('\nState\tProbabilities')
-    # [print('{0}\t\t{1}'.format(state, val)) for state, val in probabilities_histogram.items()]
+    n_nodes = 1
+    n_qpn = 3
+    F = Fidelity_calc_arb(n_nodes, n_qpn, 1)
+    print(F)

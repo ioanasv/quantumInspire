@@ -2,7 +2,7 @@ import math
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from gates import *
 
-from quantuminspire.src.project_src.gates import nonlocal_rk
+from gates import nonlocal_rk
 
 
 def local_qft(qubit_count=6, init_states=[1, 1, 1, 1, 1, 1]):
