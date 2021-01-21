@@ -125,6 +125,49 @@ def qft_2n():
     qc.h(q[7])
     return qc
 
+def qft_2n_error(error):
+    # define (qu)bits
+    q = QuantumRegister(8)
+    b = [ClassicalRegister(1) for i in range(8)]
+    qc = QuantumCircuit(q)
+    for register in b:
+        qc.add_register(register)
+
+    # construct circuit using local and nonlocal gates
+    # gates on first qubit
+    # small error
+
+
+    # rest of circuit
+    qc.h(q[0])
+    qc.crz(2 * math.pi / pow(2, 2) * (1+error), q[1], q[0])
+    qc.crz(2 * math.pi / pow(2, 3) * (1+error), q[2], q[0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4) * (1+error)), [5, 4, 3, 0], [5, 4, 3, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5) * (1+error)), [6, 4, 3, 0], [6, 4, 3, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 6) * (1+error)), [7, 4, 3, 0], [7, 4, 3, 0])
+
+    # gates on second qubit
+    qc.h(q[1])
+    qc.crz(2 * math.pi / pow(2, 2), q[2], q[1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3) * (1+error)), [5, 4, 3, 1], [5, 4, 3, 1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4) * (1+error)), [6, 4, 3, 1], [6, 4, 3, 1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5) * (1+error)), [7, 4, 3, 1], [7, 4, 3, 1])
+    # gates on third qubit
+    qc.h(q[2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2) * (1+error)), [5, 4, 3, 2], [5, 4, 3, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3) * (1+error)), [6, 4, 3, 2], [6, 4, 3, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4) * (1+error)), [7, 4, 3, 2], [7, 4, 3, 2])
+    # gates on fourth qubit
+    qc.h(q[5])
+    qc.crz(2 * math.pi / pow(2, 2) * (1+error), q[6], q[5])
+    qc.crz(2 * math.pi / pow(2, 3) * (1+error), q[7], q[5])
+    # gates on fifth qubit
+    qc.h(q[6])
+    qc.crz(2 * math.pi / pow(2, 2) * (1+error), q[7], q[6])
+    # gates on sixth qubit
+    qc.h(q[7])
+    return qc
+
 
 def qft_2n_L():
     # define (qu)bits

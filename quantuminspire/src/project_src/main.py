@@ -1,5 +1,6 @@
 import os
 import math
+import random
 # from getpass import getpass
 # from quantuminspire.src.quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
 
@@ -14,6 +15,7 @@ from qiskit.providers.aer.extensions.snapshot_statevector import *
 from qiskit.providers.aer.noise import depolarizing_error
 from qiskit.providers.aer.noise import NoiseModel
 from qiskit import IBMQ, Aer
+from qiskit.visualization import plot_bloch_multivector
 
 QI_EMAIL = os.getenv('QI_EMAIL')
 QI_PASSWORD = os.getenv('QI_PASSWORD')
@@ -50,7 +52,8 @@ def create_error(qubits, intensity):
         for j in range(i):
             if j != i:
                 noise_model.add_quantum_error(error, ['cx', 'crz'], [i, j])
-
+    # # Print noise model info
+    # print(noise_model)
     return noise_model
 
 def Fidelity_calc(qubits, intensity, n_nodes):
@@ -111,13 +114,76 @@ def Fidelity_calc(qubits, intensity, n_nodes):
     print(F)
     return F
 
+def fidelity_calc2():
+    n_nodes = 2
+    node_qubits = 4
+    # define single qubit inputstates
+    state1 = [1, 0]
+    state2 = [math.sqrt(1 / 2), math.sqrt(1 / 2)]
+    state3 = [math.sqrt(1 / 2), - math.sqrt(1 / 2)]
+    state4 = [math.sqrt(1 / 2), 1j * math.sqrt(1 / 2)]
+    state5 = [math.sqrt(1 / 2), -1j * math.sqrt(1 / 2)]
+    state6 = [0, 1]
+    states = [state1, state2, state3, state4, state5, state6]
+
+    #for all possible inputstates
+    F = []
+
+    for j in range(100):
+        teststate = []
+        for i in range(6):
+            teststate.append(states[random.randint(0,5)])
+        print(teststate)
+        # make a qft circuit
+        q = QuantumRegister(8)
+        b = [ClassicalRegister(1) for i in range(8)]
+        circuit1 = QuantumCircuit(q)
+        circuit2 = QuantumCircuit(q)
+        for register in b:
+            circuit1.add_register(register)
+            circuit2.add_register(register)
+
+
+        # initialize control qubits
+        for i in range(n_nodes):
+            for j in range(node_qubits - 1):
+                circuit1.initialize(teststate[(i * (node_qubits - 1) + j)], (i * node_qubits + j))
+                circuit2.initialize(teststate[(i * (node_qubits - 1) + j)], (i * node_qubits + j))
+
+        circuit1 = circuit1.compose(qft_2n())
+        circuit2 = circuit2.compose(qft_2n_error(1))
+
+        circuit1.snapshot_statevector('snapshot')
+        circuit2.snapshot_statevector('snapshot')
+
+        backend = Aer.get_backend("qasm_simulator")
+        result = execute(circuit1, backend=backend, shots=1000).result()
+        state1 = result.data()['snapshots']['statevector']['snapshot'][0]
+
+        result = execute(circuit2, backend=backend, shots=1000).result()
+        state2 = result.data()['snapshots']['statevector']['snapshot'][0]
+
+        F.append(state_fidelity(state2, state1))
+
+#                         print(a1)
+    # # plot_bloch_multivector()
+    # # plt.show()
+    # # print(state1)
+    # # print(state2)
+    # # circuit.draw('mpl')
+    # # plt.show()
+    #
+    print(F)
+    return F
+
 if __name__ == '__main__':
-    #fidelity for circuit with 6 input qubits and 2 nodes
-    F = Fidelity_calc(8, 0.005, 2)
+    # #fidelity for circuit with 6 input qubits and 2 nodes
+    # F = Fidelity_calc(8, 0.005, 2)
+    #
+    # # fidelity for circuit with 6 input qubits and 3 nodes
+    # F = Fidelity_calc(9, 0.005, 3)
 
-    # fidelity for circuit with 6 input qubits and 3 nodes
-    F = Fidelity_calc(9, 0.005, 3)
-
+    fidelity_calc2()
     q = QuantumRegister(8)
     b = [ClassicalRegister(1) for i in range(8)]
     circuit = QuantumCircuit(q)
