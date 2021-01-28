@@ -4,11 +4,6 @@ from quantuminspire.src.quantuminspire.qiskit import QI
 from quantuminspire.src.project_src.qfts import *
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit
-
-
-def f(x, a, b, c, d):
-    return a*np.log(b*x) * x ** d + c
 
 
 def generate_statistics(circuit):
@@ -64,30 +59,26 @@ def compare_node_distributions(n_inputqb, doplot=True):
         qc = qft_arbitraryn(n_nodes, n_inputqb // n_nodes + 1)
         stats[i, :] = generate_statistics(qc)
     if doplot:
-        fit_params1, errors1 = curve_fit(f, primefactors, stats[:, 0], p0=[1,1,-10,1])
-        fit_params2, errors2 = curve_fit(f, primefactors, stats[:, 1])
-        x = np.linspace(0, primefactors[-1])
-
-        fig, axs = plt.subplots(2)
         # axs[0].title("QFT circuit depth and size for different amounts of nodes and {} input qubits".format(n_inputqb))
-        axs[0].plot(primefactors, stats[:, 0],'+' , label="Circuit depth")
-        axs[0].plot(primefactors, stats[:, 1],'+' , label="Circuit size")
-        axs[0].plot(x, f(x, fit_params1[0], fit_params1[1], fit_params1[2], fit_params1[3]), label="Circuit depth")
-        axs[0].plot(x, f(x, fit_params2[0], fit_params1[1], fit_params1[2], fit_params1[3]), label="Circuit size")
-        # axs[0].loglog(primefactors, stats[:, 0],'+' , label="Circuit depth")
-        # axs[0].loglog(primefactors, stats[:, 1],'+' , label="Circuit size")
+        axs[0].plot(primefactors, stats[:, 0], '.-', label="Circuit depth")
+        axs[0].plot(primefactors, stats[:, 1], '.-', label="Circuit size")
+        # axs[0].plot(primefactors, stats[:, 1]*n_inputqb/np.array(primefactors))
+        # axs[0].loglog(primefactors, stats[:, 0],'.-' , label="Circuit depth")
+        # axs[0].loglog(primefactors, stats[:, 1],'.-' , label="Circuit size")
         axs[0].set_xlabel("Amount of nodes")
         axs[0].set_ylabel("Circuit depth")
         axs[0].grid()
+        # axs[0].set_ylim([0, stats[-1, 1]*1.1])
         axs[0].legend()
 
         # axs[1].title("Amounts of operations for different amounts of nodes and {} input qubits".format(n_inputqb))
-        axs[1].plot(primefactors, stats[:, 2],'+' , label="Measurements")
-        axs[1].plot(primefactors, stats[:, 3],'+' , label="Single qubit gates (classically controlled or not)")
-        axs[1].plot(primefactors, stats[:, 4],'+' , label="2-qubit gates")
-        axs[1].plot(primefactors, stats[:, 6],'+' , label="Shared entangled qubits")
+        axs[1].plot(primefactors, stats[:, 2],'.-' , label="Measurements")
+        axs[1].plot(primefactors, stats[:, 3],'.-' , label="Single qubit gates (classically controlled or not)")
+        axs[1].plot(primefactors, stats[:, 4],'.-' , label="2-qubit gates")
+        axs[1].plot(primefactors, stats[:, 6],'.-' , label="Shared entangled qubits")
         axs[1].set_xlabel("Amount of nodes")
         axs[1].set_ylabel("Amount of operations")
+        # axs[1].set_ylim([0, stats[-1,0]])
         axs[1].grid()
         axs[1].legend()
         fig.show()
@@ -102,26 +93,84 @@ def compare_input_qubits(n_nodes, input_array, doplot=True):
     if doplot:
         fig, axs = plt.subplots(2)
         # axs[0].title("QFT circuit depth and size for different amounts of nodes and {} input qubits".format(n_inputqb))
-        axs[0].plot(input_array, stats[:, 0],'+' , label="Circuit depth for {} nodes".format(n_nodes))
-        axs[0].plot(input_array, stats[:, 1],'+' , label="Circuit size for {} nodes".format(n_nodes))
-        # axs[0].loglog(primefactors, stats[:, 0],'+' , label="Circuit depth")
-        # axs[0].loglog(primefactors, stats[:, 1],'+' , label="Circuit size")
+        axs[0].plot(input_array, stats[:, 0],'.-' , label="Circuit depth for {} nodes".format(n_nodes))
+        axs[0].plot(input_array, stats[:, 1],'.-' , label="Circuit size for {} nodes".format(n_nodes))
+        # axs[0].loglog(input_array, stats[:, 0],'.-' , label="Circuit depth")
+        # axs[0].loglog(input_array, stats[:, 1],'.-' , label="Circuit size")
         axs[0].set_xlabel("Amount of input qubits")
         axs[0].set_ylabel("Circuit depth")
         axs[0].grid()
         axs[0].legend()
 
         # axs[1].title("Amounts of operations for different amounts of nodes and {} input qubits".format(n_inputqb))
-        axs[1].plot(input_array, stats[:, 2],'+' , label="Measurements for {} nodes".format(n_nodes))
-        axs[1].plot(input_array, stats[:, 3],'+' , label="Single qubit gates (classically controlled or not) for {} nodes".format(n_nodes))
-        axs[1].plot(input_array, stats[:, 4],'+' , label="2-qubit gates for {} nodes".format(n_nodes))
-        axs[1].plot(input_array, stats[:, 6],'+' , label="Shared entangled qubits for {} nodes".format(n_nodes))
+        axs[1].plot(input_array, stats[:, 2],'.-' , label="Measurements for {} nodes".format(n_nodes))
+        axs[1].plot(input_array, stats[:, 3],'.-' , label="Single qubit gates (classically controlled or not) for {} nodes".format(n_nodes))
+        axs[1].plot(input_array, stats[:, 4],'.-' , label="2-qubit gates for {} nodes".format(n_nodes))
+        axs[1].plot(input_array, stats[:, 6],'.-' , label="Shared entangled qubits for {} nodes".format(n_nodes))
         axs[1].set_xlabel("Amount of input qubits")
         axs[1].set_ylabel("Amount of operations")
         axs[1].grid()
         axs[1].legend()
         fig.show()
     return stats
+
+
+def compare_multinode_input_scaling(n_nodes, max_input, doplot=True):
+
+    # stats = np.empty([len(n_nodes), len(n_nodes)])
+    for n_node in n_nodes:
+        input_array = range(n_node, max_input, n_node)
+        stats = np.empty(len(input_array))
+        for i in range(len(input_array)):
+
+            qc = qft_arbitraryn(n_node, input_array[i] // n_node + 1)
+            stats[i] = generate_statistics(qc)[1]
+        plt.plot(input_array, stats, '.-', label="Circuit size for {} nodes".format(n_node))
+    plt.xlabel("Amount of input qubits")
+    plt.ylabel("Circuit size")
+    plt.grid()
+    plt.legend()
+    plt.show()
+    # if doplot:
+    #     fig, axs = plt.subplots(2)
+    #     # axs[0].title("QFT circuit depth and size for different amounts of nodes and {} input qubits".format(n_inputqb))
+    #     axs[0].plot(input_array, stats[:, 0], '.-', label="Circuit depth for {} nodes".format(n_nodes))
+    #     # axs[0].plot(input_array, stats[:, 1], '.-', label="Circuit size for {} nodes".format(n_nodes))
+    #     # axs[0].loglog(input_array, stats[:, 0],'.-' , label="Circuit depth")
+    #     # axs[0].loglog(input_array, stats[:, 1],'.-' , label="Circuit size")
+    #     axs[0].set_xlabel("Amount of input qubits")
+    #     axs[0].set_ylabel("Circuit depth")
+    #     axs[0].grid()
+    #     axs[0].legend()
+
+
+def compare_multinode_total_scaling(n_nodes, max_input, doplot=True):
+
+    # stats = np.empty([len(n_nodes), len(n_nodes)])
+    for n_node in n_nodes:
+        input_array = range(n_node, max_input, n_node)
+        stats = np.empty(len(input_array))
+        for i in range(len(input_array)):
+
+            qc = qft_arbitraryn(n_node, input_array[i] // n_node + 1)
+            stats[i] = generate_statistics(qc)[1]
+        plt.log(np.array(input_array) + n_node, stats, '.-', label="Circuit depth for {} nodes".format(n_node))
+    plt.xlabel("Total amount of qubits")
+    plt.ylabel("Circuit depth")
+    plt.grid()
+    plt.legend()
+    plt.show()
+    # if doplot:
+    #     fig, axs = plt.subplots(2)
+    #     # axs[0].title("QFT circuit depth and size for different amounts of nodes and {} input qubits".format(n_inputqb))
+    #     axs[0].plot(input_array, stats[:, 0], '.-', label="Circuit depth for {} nodes".format(n_nodes))
+    #     # axs[0].plot(input_array, stats[:, 1], '.-', label="Circuit size for {} nodes".format(n_nodes))
+    #     # axs[0].loglog(input_array, stats[:, 0],'.-' , label="Circuit depth")
+    #     # axs[0].loglog(input_array, stats[:, 1],'.-' , label="Circuit size")
+    #     axs[0].set_xlabel("Amount of input qubits")
+    #     axs[0].set_ylabel("Circuit depth")
+    #     axs[0].grid()
+    #     axs[0].legend()
 
 
 def compare_node_scaling(node_size, n_nodes_array, doplot=True):
@@ -134,20 +183,20 @@ def compare_node_scaling(node_size, n_nodes_array, doplot=True):
         n_qubits = n_nodes_array*node_size
         fig, axs = plt.subplots(2)
         # axs[0].title("QFT circuit depth and size for different amounts of nodes and {} input qubits".format(n_inputqb))
-        axs[0].plot(n_qubits, stats[:, 0],'+' , label="Circuit depth for {} nodes".format(n_nodes))
-        axs[0].plot(n_qubits, stats[:, 1],'+' , label="Circuit size for {} nodes".format(n_nodes))
-        # axs[0].loglog(primefactors, stats[:, 0],'+' , label="Circuit depth")
-        # axs[0].loglog(primefactors, stats[:, 1],'+' , label="Circuit size")
+        axs[0].plot(n_qubits, stats[:, 0],'.-' , label="Circuit depth for {} nodes".format(n_nodes))
+        axs[0].plot(n_qubits, stats[:, 1],'.-' , label="Circuit size for {} nodes".format(n_nodes))
+        # axs[0].loglog(primefactors, stats[:, 0],'.-' , label="Circuit depth")
+        # axs[0].loglog(primefactors, stats[:, 1],'.-' , label="Circuit size")
         axs[0].set_xlabel("Amount of input qubits")
         axs[0].set_ylabel("Circuit depth")
         axs[0].grid()
         axs[0].legend()
 
         # axs[1].title("Amounts of operations for different amounts of nodes and {} input qubits".format(n_inputqb))
-        axs[1].plot(n_qubits, stats[:, 2],'+' , label="Measurements for {} nodes".format(n_nodes))
-        axs[1].plot(n_qubits, stats[:, 3],'+' , label="Single qubit gates (classically controlled or not) for {} nodes".format(n_nodes))
-        axs[1].plot(n_qubits, stats[:, 4],'+' , label="2-qubit gates for {} nodes".format(n_nodes))
-        axs[1].plot(n_qubits, stats[:, 6],'+' , label="Shared entangled qubits for {} nodes".format(n_nodes))
+        axs[1].plot(n_qubits, stats[:, 2],'.-' , label="Measurements for {} nodes".format(n_nodes))
+        axs[1].plot(n_qubits, stats[:, 3],'.-' , label="Single qubit gates (classically controlled or not) for {} nodes".format(n_nodes))
+        axs[1].plot(n_qubits, stats[:, 4],'.-' , label="2-qubit gates for {} nodes".format(n_nodes))
+        axs[1].plot(n_qubits, stats[:, 6],'.-' , label="Shared entangled qubits for {} nodes".format(n_nodes))
         axs[1].set_xlabel("Amount of input qubits")
         axs[1].set_ylabel("Amount of operations")
         axs[1].grid()
@@ -169,7 +218,10 @@ if __name__ == '__main__':
     # stats = generate_statistics(qc)
     # qc.draw('mpl', filename="qcirc.png")
 
-    compare_node_distributions(16)
-    # compare_input_qubits(4, range(4, 17, 4))
+    # compare_node_distributions(12)
+    # n_nodes = 2
+    # compare_input_qubits(n_nodes, range(n_nodes, 36, n_nodes))
     # compare_node_scaling(4, range(1, 9))
+    compare_multinode_input_scaling(n_nodes=get_primefactors(45), max_input=46)
+    # compare_multinode_total_scaling(n_nodes=get_primefactors(30), max_input=31)
 
