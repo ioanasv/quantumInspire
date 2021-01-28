@@ -1,6 +1,8 @@
 import math
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
-from quantuminspire.src.project_src.gates import *
+from gates import *
+
+from gates import nonlocal_rk
 
 
 def local_qft(qubit_count=6, init_states=[1, 1, 1, 1, 1, 1]):
@@ -125,6 +127,49 @@ def qft_2n():
     qc.h(q[7])
     return qc
 
+def qft_2n_error(error):
+    # define (qu)bits
+    q = QuantumRegister(8)
+    b = [ClassicalRegister(1) for i in range(8)]
+    qc = QuantumCircuit(q)
+    for register in b:
+        qc.add_register(register)
+
+    # construct circuit using local and nonlocal gates
+    # gates on first qubit
+    # small error
+
+
+    # rest of circuit
+    qc.h(q[0])
+    qc.crz(2 * math.pi / pow(2, 2) * (1+error), q[1], q[0])
+    qc.crz(2 * math.pi / pow(2, 3) * (1+error), q[2], q[0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4) * (1+error)), [5, 4, 3, 0], [5, 4, 3, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5) * (1+error)), [6, 4, 3, 0], [6, 4, 3, 0])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 6) * (1+error)), [7, 4, 3, 0], [7, 4, 3, 0])
+
+    # gates on second qubit
+    qc.h(q[1])
+    qc.crz(2 * math.pi / pow(2, 2), q[2], q[1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3) * (1+error)), [5, 4, 3, 1], [5, 4, 3, 1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4) * (1+error)), [6, 4, 3, 1], [6, 4, 3, 1])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 5) * (1+error)), [7, 4, 3, 1], [7, 4, 3, 1])
+    # gates on third qubit
+    qc.h(q[2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2) * (1+error)), [5, 4, 3, 2], [5, 4, 3, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 3) * (1+error)), [6, 4, 3, 2], [6, 4, 3, 2])
+    qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 4) * (1+error)), [7, 4, 3, 2], [7, 4, 3, 2])
+    # gates on fourth qubit
+    qc.h(q[5])
+    qc.crz(2 * math.pi / pow(2, 2) * (1+error), q[6], q[5])
+    qc.crz(2 * math.pi / pow(2, 3) * (1+error), q[7], q[5])
+    # gates on fifth qubit
+    qc.h(q[6])
+    qc.crz(2 * math.pi / pow(2, 2) * (1+error), q[7], q[6])
+    # gates on sixth qubit
+    qc.h(q[7])
+    return qc
+
 
 def qft_2n_L():
     # define (qu)bits
@@ -178,13 +223,14 @@ def qft_2n_L():
     return qc
 
 
-def qft_arbitraryn(n_nodes, n_qpn):
+def qft_arbitraryn(n_nodes, n_qpn, ry_error=0, x_error=0):
     """
     Makes a distributed quantum fourier transform circuit, with an arbitrary amount of nodes and qubits per node. It
     assumes there is one communication qubit per node that is connected to every other communication qubit in every
     other node.
     :param n_nodes: amount of nodes, must be an integer and 1 or higher
     :param n_qpn: amount of qubits per node, including the communication qubit, must be an integer and 2 or higher
+    :param error: ammount of overrototion of ry gates
     :return: qc: a n_nodes*n_qpn qubit distributed qft circuit
     """
 
@@ -206,13 +252,13 @@ def qft_arbitraryn(n_nodes, n_qpn):
         for k in range(n_input - i - 1):
             # check if required control qubit is in same node as target qubit, if so, do local gate, if not, non-local
             if i % (n_qpn - 1) + k < n_qpn - 2:
-                qc.crz(2 * math.pi / pow(2, 2 + k), q[i_q + 1 + k], q[i_q])
+                qc.crz(2 * math.pi / pow(2, 2 + k) * (1 + ry_error), q[i_q + 1 + k], q[i_q])
                 # print("making local RK gate from {} to {}".format(i, i + k + 1))
             else:
                 # find index of the required control qubit
                 i_controlq = i + k + 1 + ((i + k + 1) // (n_qpn-1))
 
-                qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2 + k)),
+                qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2 + k), ry_error, x_error),
                                 [i_controlq, ((i_controlq // n_qpn) + 1)*n_qpn - 1, ((i_q // n_qpn) + 1)*n_qpn - 1, i_q],
                                 [i_controlq, ((i_controlq // n_qpn) + 1)*n_qpn - 1, ((i_q // n_qpn) + 1)*n_qpn - 1, i_q])
                 # print("making non-local RK gate from {} to {}, controlq {}, commcontrolq {}, commtargetq {}, targetq {}".format(i, i + k + 1, i_controlq, ((i_controlq // n_qpn) + 1)*n_qpn - 1, ((i_q // n_qpn) + 1)*n_qpn - 1, i_q))

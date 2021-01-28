@@ -1,4 +1,5 @@
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
+import math
 
 
 def entangler(initial_state, circuit):
@@ -74,7 +75,7 @@ def teleport(state):
     return qc
 
 
-def nonlocal_rk(theta):
+def nonlocal_rk(theta, ry_error=0, x_error=0):
     q = QuantumRegister(4)
     b0 = ClassicalRegister(1)
     b1 = ClassicalRegister(1)
@@ -87,13 +88,16 @@ def nonlocal_rk(theta):
     qc.measure(q[1], b1)
     qc.barrier(q[1], q[2])
     qc.x(q[1]).c_if(b1, 1)
+    qc.rx(x_error*math.pi, 1)
     qc.x(q[2]).c_if(b1, 1)
-    qc.crz(theta, q[2], q[3])
+    qc.rx(x_error * math.pi, 2)
+    qc.crz(theta * (1 + ry_error), q[2], q[3])
     qc.h(q[2])
     qc.measure(q[2], b2)
     qc.barrier(q[0], q[2])
     qc.z(q[0]).c_if(b2, 1)
     qc.x(q[2]).c_if(b2, 1)
+    qc.rx(x_error * math.pi, 2)
 
     return qc
 
