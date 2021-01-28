@@ -223,7 +223,7 @@ def qft_2n_L():
     return qc
 
 
-def qft_arbitraryn(n_nodes, n_qpn, error=0):
+def qft_arbitraryn(n_nodes, n_qpn, ry_error=0, x_error=0):
     """
     Makes a distributed quantum fourier transform circuit, with an arbitrary amount of nodes and qubits per node. It
     assumes there is one communication qubit per node that is connected to every other communication qubit in every
@@ -252,13 +252,13 @@ def qft_arbitraryn(n_nodes, n_qpn, error=0):
         for k in range(n_input - i - 1):
             # check if required control qubit is in same node as target qubit, if so, do local gate, if not, non-local
             if i % (n_qpn - 1) + k < n_qpn - 2:
-                qc.crz(2 * math.pi / pow(2, 2 + k) * (1 + error), q[i_q + 1 + k], q[i_q])
+                qc.crz(2 * math.pi / pow(2, 2 + k) * (1 + ry_error), q[i_q + 1 + k], q[i_q])
                 # print("making local RK gate from {} to {}".format(i, i + k + 1))
             else:
                 # find index of the required control qubit
                 i_controlq = i + k + 1 + ((i + k + 1) // (n_qpn-1))
 
-                qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2 + k), error),
+                qc = qc.compose(nonlocal_rk(2 * math.pi / pow(2, 2 + k), ry_error, x_error),
                                 [i_controlq, ((i_controlq // n_qpn) + 1)*n_qpn - 1, ((i_q // n_qpn) + 1)*n_qpn - 1, i_q],
                                 [i_controlq, ((i_controlq // n_qpn) + 1)*n_qpn - 1, ((i_q // n_qpn) + 1)*n_qpn - 1, i_q])
                 # print("making non-local RK gate from {} to {}, controlq {}, commcontrolq {}, commtargetq {}, targetq {}".format(i, i + k + 1, i_controlq, ((i_controlq // n_qpn) + 1)*n_qpn - 1, ((i_q // n_qpn) + 1)*n_qpn - 1, i_q))

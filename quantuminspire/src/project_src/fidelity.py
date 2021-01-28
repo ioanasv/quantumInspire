@@ -12,6 +12,7 @@ from main import *
 import numpy as np
 from qiskit.circuit.library import QFT
 import matplotlib.pyplot as plt
+import statistics
 
 QI_EMAIL = os.getenv('QI_EMAIL')
 QI_PASSWORD = os.getenv('QI_PASSWORD')
@@ -38,7 +39,7 @@ def qubit_probabilities(histogram):
     return means_list
 
 
-def two_way_qft_arbitraryn_error(n_nodes, n_qpn, error):
+def two_way_qft_arbitraryn_error(n_nodes, n_qpn, ry_error, x_error):
 
     n_total = n_nodes * n_qpn
 
@@ -66,7 +67,7 @@ def two_way_qft_arbitraryn_error(n_nodes, n_qpn, error):
 
     # create qft_arbitraryn circuit with the error given as input
 
-    circuit = circuit.compose(qft_arbitraryn(n_nodes, n_qpn, error))
+    circuit = circuit.compose(qft_arbitraryn(n_nodes, n_qpn, ry_error, x_error))
 
     # construct and add native inverse qft
     communication_qubit_indices = [n_qpn - 1 + i*n_qpn for i in range(n_nodes)]
@@ -90,7 +91,7 @@ def two_way_qft_arbitraryn_error(n_nodes, n_qpn, error):
     # TODO: calculate fidelity
     return circuit
 
-def Fidelity_calc_arb(n_nodes, n_qpn, error=0):
+def fidelity_calc_arb(n_nodes, n_qpn, ry_error=0, x_error=0):
     authentication = get_authentication()
     QI.set_authentication(authentication, QI_URL)
     qi_backend = QI.get_backend('QX single-node simulator')
@@ -103,7 +104,7 @@ def Fidelity_calc_arb(n_nodes, n_qpn, error=0):
     state5 = [math.sqrt(1 / 2), -1j * math.sqrt(1 / 2)]
     state6 = [0, 1]
 
-    states = [state1, state2, state3, state4, state5, state6]
+    states = [state1, state6]
 
     # for all possible inputstates
     F = []
@@ -111,7 +112,7 @@ def Fidelity_calc_arb(n_nodes, n_qpn, error=0):
         #make a random selection of input states
         input = []
         for i in range((n_qpn-1) * n_nodes):
-            input.append(states[random.randint(0, 5)])
+            input.append(states[random.randint(0, 1)])
 
         # make a qft circuit
         q = QuantumRegister(n_qpn * n_nodes)
@@ -125,21 +126,35 @@ def Fidelity_calc_arb(n_nodes, n_qpn, error=0):
                 circuit.initialize(input[(i * (n_qpn - 1) + j)], (i * n_qpn + j))
 
         circuit.snapshot_statevector('snapshot_start')
-        circuit = circuit.compose(two_way_qft_arbitraryn_error(n_nodes, n_qpn, error))
+        circuit = circuit.compose(two_way_qft_arbitraryn_error(n_nodes, n_qpn, ry_error, x_error))
         circuit.snapshot_statevector('snapshot_end')
 
-        circuit.draw('mpl')
-        plt.show()
+        # circuit.draw('mpl')
+        # plt.show()
+
         backend = Aer.get_backend("qasm_simulator")
-        result = execute(circuit, backend=backend, shots=1000).result()
+        result = execute(circuit, backend=backend, shots=256).result()
         inputstate = result.data()['snapshots']['statevector']['snapshot_start'][0]
         outputstate = result.data()['snapshots']['statevector']['snapshot_end'][0]
+        # print(inputstate)
+        # print(outputstate)
 
         Fidelity = state_fidelity(inputstate, outputstate)
-        print(inputstate)
-        print(outputstate)
-        print(Fidelity)
+        # print(Fidelity)
         F.append(Fidelity)
+    A = statistics.mean(F)
+    print(A)
+    return A
 
+def fidelity_node_comparisson(n_nodes, n_qpn):
+
+    #24 bit test 2, 4, 8, 16, 32, 64
+    # nodes = [1, 2, 3, 6]
+    error = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
+    error[:] = [x / 10 for x in error]
+    F = []
+
+    for i in error:
+        F.append(fidelity_calc_arb(n_nodes, n_qpn, 0, i))
+    print(F)
     return F
-
