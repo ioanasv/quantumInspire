@@ -59,6 +59,7 @@ def compare_node_distributions(n_inputqb, doplot=True):
         qc = qft_arbitraryn(n_nodes, n_inputqb // n_nodes + 1)
         stats[i, :] = generate_statistics(qc)
     if doplot:
+        fig, axs = plt.subplots(2)
         # axs[0].title("QFT circuit depth and size for different amounts of nodes and {} input qubits".format(n_inputqb))
         axs[0].plot(primefactors, stats[:, 0], '.-', label="Circuit depth")
         axs[0].plot(primefactors, stats[:, 1], '.-', label="Circuit size")
@@ -66,7 +67,7 @@ def compare_node_distributions(n_inputqb, doplot=True):
         # axs[0].loglog(primefactors, stats[:, 0],'.-' , label="Circuit depth")
         # axs[0].loglog(primefactors, stats[:, 1],'.-' , label="Circuit size")
         axs[0].set_xlabel("Amount of nodes")
-        axs[0].set_ylabel("Circuit depth")
+        axs[0].set_ylabel("Amount of operations")
         axs[0].grid()
         # axs[0].set_ylim([0, stats[-1, 1]*1.1])
         axs[0].legend()
@@ -98,7 +99,7 @@ def compare_input_qubits(n_nodes, input_array, doplot=True):
         # axs[0].loglog(input_array, stats[:, 0],'.-' , label="Circuit depth")
         # axs[0].loglog(input_array, stats[:, 1],'.-' , label="Circuit size")
         axs[0].set_xlabel("Amount of input qubits")
-        axs[0].set_ylabel("Circuit depth")
+        axs[0].set_ylabel("Amount of operations")
         axs[0].grid()
         axs[0].legend()
 
@@ -139,7 +140,7 @@ def compare_multinode_input_scaling(n_nodes, max_input, doplot=True):
     #     # axs[0].loglog(input_array, stats[:, 0],'.-' , label="Circuit depth")
     #     # axs[0].loglog(input_array, stats[:, 1],'.-' , label="Circuit size")
     #     axs[0].set_xlabel("Amount of input qubits")
-    #     axs[0].set_ylabel("Circuit depth")
+    #     axs[0].set_ylabel("Amount of operations")
     #     axs[0].grid()
     #     axs[0].legend()
 
@@ -168,7 +169,7 @@ def compare_multinode_total_scaling(n_nodes, max_input, doplot=True):
     #     # axs[0].loglog(input_array, stats[:, 0],'.-' , label="Circuit depth")
     #     # axs[0].loglog(input_array, stats[:, 1],'.-' , label="Circuit size")
     #     axs[0].set_xlabel("Amount of input qubits")
-    #     axs[0].set_ylabel("Circuit depth")
+    #     axs[0].set_ylabel("Amount of operations")
     #     axs[0].grid()
     #     axs[0].legend()
 
@@ -188,7 +189,7 @@ def compare_node_scaling(node_size, n_nodes_array, doplot=True):
         # axs[0].loglog(primefactors, stats[:, 0],'.-' , label="Circuit depth")
         # axs[0].loglog(primefactors, stats[:, 1],'.-' , label="Circuit size")
         axs[0].set_xlabel("Amount of input qubits")
-        axs[0].set_ylabel("Circuit depth")
+        axs[0].set_ylabel("Amount of operations")
         axs[0].grid()
         axs[0].legend()
 
@@ -218,10 +219,10 @@ if __name__ == '__main__':
     # stats = generate_statistics(qc)
     # qc.draw('mpl', filename="qcirc.png")
 
-    # compare_node_distributions(12)
+    compare_node_distributions(12)
     # n_nodes = 2
     # compare_input_qubits(n_nodes, range(n_nodes, 36, n_nodes))
     # compare_node_scaling(4, range(1, 9))
-    compare_multinode_input_scaling(n_nodes=get_primefactors(45), max_input=46)
+    # compare_multinode_input_scaling(n_nodes=get_primefactors(45), max_input=46)
     # compare_multinode_total_scaling(n_nodes=get_primefactors(30), max_input=31)
 
